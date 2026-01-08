@@ -1,0 +1,265 @@
+{
+  "connections": {
+    "498706012": {
+      "tasks": {
+        "daily": {
+          "news": {
+            "-ONo3mnYId-kTNw4fZ8Y": false,
+            "-ONo45DLSl0xEhCP45_q": false,
+            "-ONo4oz1_-EoRQguJBD7": true,
+            "-ONo5-zN-E6MRAVN7JAn": true,
+            "-ONo5lD4LOs60wyySYr8": false,
+            "-ORG2jtRu38rUw5-9jpA": true,
+            "undefined": false
+          }
+        }
+      }
+    },
+    "904556713": {
+      "tasks": {
+        "daily": {
+          "game": true
+        }
+      }
+    },
+    "1097829974": {
+      "1": true,
+      "5": true,
+      "tasks": {
+        "daily": {
+          "news": {
+            "undefined": false
+          }
+        }
+      }
+    },
+    "1152318261": {
+      "tasks": {
+        "daily": {
+          "game": true
+        }
+      }
+    },
+    "1215470469": {
+      "lastReset": {
+        "weekly": "2025-04-14"
+      }
+    },
+    "1557280604": {
+      "tasks": {
+        "daily": {
+          "news": {
+            "-ONo3mnYId-kTNw4fZ8Y": true,
+            "-ONo45DLSl0xEhCP45_q": true,
+            "-ONo4oz1_-EoRQguJBD7": true,
+            "-ONo5-zN-E6MRAVN7JAn": true,
+            "-ONo5lD4LOs60wyySYr8": true,
+            "-ORG2jtRu38rUw5-9jpA": true,
+            "-ORG2vY9zCCrZVl4o0aZ": true,
+            "-ORG4DNwQgnToi5LHbMo": true,
+            "-ORMVx82h5OEAG7wQZH2": true
+          }
+        }
+      }
+    },
+    "5348303140": {
+      "1": true,
+      "4": true,
+      "6": {
+        "lastClaimed": 1767844893456
+      },
+      "7": {
+        "lastClaimed": 1767782820604
+      },
+      "farming": {
+        "startTime": 1767844841369
+      },
+      "tasks": {
+        "daily": {
+          "news": {
+            "-ONo5lD4LOs60wyySYr8": true,
+            "-ORG2jtRu38rUw5-9jpA": true,
+            "-ORG2vY9zCCrZVl4o0aZ": true,
+            "-ORG4DNwQgnToi5LHbMo": true,
+            "-OWKzBCYOwVV6hUmTTSY": true
+          }
+        }
+      }
+    },
+    "5410076550": {
+      "1": true,
+      "6": {
+        "lastClaimed": 1767700707746
+      },
+      "7": {
+        "lastClaimed": 1767700780967
+      }
+    },
+    "5680372126": {
+      "tasks": {
+        "daily": {
+          "news": {
+            "-ORG2vY9zCCrZVl4o0aZ": true,
+            "undefined": false
+          }
+        }
+      }
+    },
+    "6646856043": {
+      "tasks": {
+        "daily": {
+          "news": {
+            "undefined": false
+          }
+        }
+      }
+    },
+    "6725958435": [true],
+    "6743986736": {
+      "1": true,
+      "4": true,
+      "6": {
+        "lastClaimed": 1767779135135
+      },
+      "7": {
+        "lastClaimed": 1767699494291
+      },
+      "tasks": {
+        "daily": {
+          "news": {
+            "123": true,
+            "-ONo3mnYId-kTNw4fZ8Y": true,
+            "-ONo45DLSl0xEhCP45_q": true,
+            "-ONo4oz1_-EoRQguJBD7": true,
+            "-ONo5-zN-E6MRAVN7JAn": true,
+            "-ONo5lD4LOs60wyySYr8": true,
+            "-ORG2jtRu38rUw5-9jpA": true,
+            "-ORG2vY9zCCrZVl4o0aZ": true,
+            "-ORG4DNwQgnToi5LHbMo": true,
+            "-OWKzBCYOwVV6hUmTTSY": true
+          }
+        }
+      }
+    },
+    "8171863988": {
+      "1": {
+        "lastClaimed": 1767786215245
+      },
+      "4": {
+        "lastClaimed": 1767786380882
+      },
+      "6": {
+        "lastClaimed": 1767785976699
+      },
+      "7": {
+        "lastClaimed": 1767786675811
+      },
+      "tasks": {
+        "daily": {
+          "game": true,
+          "news": {
+            "-ONo3mnYId-kTNw4fZ8Y": true,
+            "-ONo45DLSl0xEhCP45_q": true,
+            "-ONo4oz1_-EoRQguJBD7": true,
+            "-ONo5-zN-E6MRAVN7JAn": true,
+            "-ONo5lD4LOs60wyySYr8": true,
+            "-ORG2jtRu38rUw5-9jpA": true,
+            "-ORG2vY9zCCrZVl4o0aZ": true,
+            "-ORG4DNwQgnToi5LHbMo": true,
+            "-OWKzBCYOwVV6hUmTTSY": true
+          }
+        }
+      }
+    },
+    "null": {
+      "1": true,
+      "4": true,
+      "6": true,
+      "7": true,
+      "tasks": {
+        "0": {
+          "claimed": true,
+          "claimedDate": "2026-01-05",
+          "completed": true,
+          "completedDate": "2026-01-05",
+          "date": "2026-01-05"
+        },
+        "1": false,
+        "4": {
+          "claimed": true,
+          "claimedDate": "2026-01-05",
+          "completed": true,
+          "completedDate": "2026-01-05"
+        },
+        "5": {
+          "claimed": true,
+          "completed": true
+        },
+        "6": {
+          "claimed": true,
+          "claimedDate": "2026-01-05",
+          "completed": false
+        },
+        "7": {
+          "claimed": true,
+          "claimedDate": "2026-01-05",
+          "completed": false,
+          "date": "2026-01-05"
+        },
+        "daily": {
+          "game": true,
+          "news": {
+            "24": false,
+            "25": false,
+            "26": false,
+            "27": true,
+            "28": true,
+            "29": true,
+            "30": true,
+            "31": true,
+            "32": true,
+            "33": true,
+            "34": true,
+            "35": true,
+            "36": true,
+            "37": true,
+            "59": true,
+            "60": true,
+            "61": true,
+            "62": true,
+            "115": true,
+            "116": true,
+            "117": true,
+            "119": false,
+            "120": true,
+            "121": true,
+            "122": true,
+            "123": true,
+            "-ONo3mnYId-kTNw4fZ8Y": true,
+            "-ONo45DLSl0xEhCP45_q": true,
+            "-ONo4oz1_-EoRQguJBD7": true,
+            "-ONo5-zN-E6MRAVN7JAn": true,
+            "-ONo5lD4LOs60wyySYr8": true,
+            "-ORG2jtRu38rUw5-9jpA": true,
+            "-ORG2vY9zCCrZVl4o0aZ": true,
+            "-ORG4DNwQgnToi5LHbMo": true,
+            "-ORG5DWdVKbD7kO_OyyQ": true,
+            "-ORMVx82h5OEAG7wQZH2": true,
+            "-OWKzBCYOwVV6hUmTTSY": true
+          }
+        }
+      }
+    }
+  },
+  "history": {
+    "480874940": {
+      "-OT1rpOwYwTc52p2Fnd7": {
+        "action": "Game Points Added",
+        "id": "-OT1rpOwYwTc52p2Fnd7",
+        "points": 451,
+        "timestamp": 1750247363385,
+        "type": "game"
+      }
+    }
+  }
+}
