@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -7,28 +7,29 @@
 /* Custom Grid Background */
 .bg-grid-pattern {
   background-size: 60px 60px;
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+  background-image: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.1) 1px,
+      transparent 1px
+    ),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
   mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
-  -webkit-mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+  -webkit-mask-image: radial-gradient(
+    circle at center,
+    black 60%,
+    transparent 100%
+  );
 }
 
 :root {
   /* Colors extracted from the reference image */
   --bg-dark-purple: #2e1065;
-  /* Deep purple background */
   --bg-light-purple: #7c3aed;
-  /* Lighter purple for cards/sections */
   --accent-green: #22c55e;
-  /* "Start Farming" green */
   --accent-pink: #ec4899;
-  /* "Play Game" pink */
   --text-yellow: #fbbf24;
-  /* "0 XP" yellow */
   --text-white: #ffffff;
   --glass-bg: rgba(124, 58, 237, 0.15);
-  /* Purple-tinted glass */
   --glass-border: rgba(167, 139, 250, 0.2);
 }
 
@@ -36,33 +37,55 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
 }
 
 body {
-  background-color: #1a103c;
-  /* Very dark purple base */
-  background-image:
-    radial-gradient(circle at 10% 20%, rgba(76, 29, 149, 0.4) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 40%),
-    linear-gradient(180deg, #2e1065 0%, #1e1b4b 100%);
-  color: var(--text-white);
+  /* Default to Light Mode */
+  background-color: #f3f4f6; /* bg-gray-100 */
+  color: #1e293b; /* text-slate-800 */
   min-height: 100vh;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Scrollbar */
+/* Dark Mode Overrides */
+.dark body {
+  background-color: #1a103c;
+  background-image: radial-gradient(
+      circle at 10% 20%,
+      rgba(76, 29, 149, 0.4) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 90% 80%,
+      rgba(236, 72, 153, 0.15) 0%,
+      transparent 40%
+    ),
+    linear-gradient(180deg, #2e1065 0%, #1e1b4b 100%);
+  color: var(--text-white);
+}
+
+/* Scrollbar Styles - Adaptive */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark ::-webkit-scrollbar-track {
   background: #1e1b4b;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-light-purple);
+  background: #cbd5e1; /* slate-300 */
   border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--bg-light-purple);
 }
 
 /* Login Container */
@@ -77,7 +100,11 @@ body {
 
 /* Glassmorphism Card matching the User Card style in image */
 .login-card {
-  background: linear-gradient(180deg, rgba(124, 58, 237, 0.4) 0%, rgba(91, 33, 182, 0.4) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(124, 58, 237, 0.4) 0%,
+    rgba(91, 33, 182, 0.4) 100%
+  );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
@@ -86,7 +113,6 @@ body {
   padding: 30px;
   width: 100%;
   max-width: 380px;
-  /* Mobile-ish width like the screenshot */
   animation: fadeIn 0.5s ease-out;
   position: relative;
   overflow: hidden;
@@ -94,13 +120,16 @@ body {
 
 /* Subtle grid effect overlay like in the image */
 .login-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+  background-image: linear-gradient(
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px
+    ),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 20px 20px;
   pointer-events: none;
@@ -118,7 +147,6 @@ body {
 .login-subtitle {
   text-align: center;
   color: #c4b5fd;
-  /* Light lavender text */
   margin-bottom: 24px;
   font-size: 0.9rem;
 }
@@ -162,7 +190,6 @@ body {
   width: 100%;
   padding: 14px;
   background: linear-gradient(90deg, #ec4899 0%, #db2777 100%);
-  /* Pink Gradient */
   border: none;
   border-radius: 12px;
   color: white;
@@ -186,7 +213,6 @@ body {
   width: 100%;
   padding: 14px;
   background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
-  /* Green Gradient */
   border: none;
   border-radius: 12px;
   color: white;
@@ -213,7 +239,7 @@ body {
 
 .divider::before,
 .divider::after {
-  content: '';
+  content: "";
   flex: 1;
   border-bottom: 1px solid rgba(139, 92, 246, 0.3);
 }

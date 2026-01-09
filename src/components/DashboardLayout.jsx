@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutList, Newspaper, User, LogOut, Menu, X, Power, Activity, CheckCircle2, Award } from 'lucide-react';
+import { LayoutList, Newspaper, User, LogOut, Menu, X, Power, Activity, CheckCircle2, Award, Sun, Moon } from 'lucide-react'; 
 import { signOut } from 'firebase/auth';
 import { auth } from '../services/FirebaseConfig';
+import { useTheme } from '../hooks/useTheme'; 
 
 const DashboardLayout = ({ children, title, subtitle, sidebarExtra, subNavigation, customNavItems }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const { theme, toggleTheme } = useTheme(); 
 
     const handleLogout = async () => {
         try {
@@ -60,17 +62,22 @@ const DashboardLayout = ({ children, title, subtitle, sidebarExtra, subNavigatio
     const displayNavItems = customNavItems || defaultNavItems;
 
     return (
-        <div className="min-h-screen bg-gray-100 font-sans text-slate-800 flex flex-col md:flex-row">
+        <div className="min-h-screen bg-gray-100 dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-100 flex flex-col md:flex-row transition-colors duration-300">
 
             {/* Mobile Header */}
-            <div className="md:hidden bg-white p-4 shadow-sm flex justify-between items-center z-30 relative">
+            <div className="md:hidden bg-white dark:bg-slate-800 p-4 shadow-sm flex justify-between items-center z-30 relative transition-colors duration-300">
                 <div className="flex items-center gap-2">
-                    <LayoutList className="h-6 w-6 text-purple-600" />
-                    <span className="font-bold text-slate-800">Admin Console</span>
+                    <LayoutList className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    <span className="font-bold text-slate-800 dark:text-white">Admin Console</span>
                 </div>
-                <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-slate-600">
-                    {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                </button>
+                <div className="flex items-center gap-4">
+                    <button onClick={toggleTheme} className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-yellow-400 transition-colors">
+                         {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                    </button>
+                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-slate-600 dark:text-slate-300">
+                        {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                    </button>
+                </div>
             </div>
 
             {/* Sidebar */}
@@ -78,7 +85,7 @@ const DashboardLayout = ({ children, title, subtitle, sidebarExtra, subNavigatio
                 fixed inset-y-0 left-0 z-20 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-screen
                 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
-                <div className="h-full flex flex-col p-4 bg-gradient-to-br from-slate-800 to-slate-900">
+                <div className="h-full flex flex-col p-4 bg-gradient-to-br from-slate-800 to-slate-900 border-r border-slate-700/50">
                     {/* Brand Desktop */}
                     <div className="hidden md:flex items-center gap-3 px-4 py-6 border-b border-white/10 mb-6">
                         <LayoutList className="h-7 w-7 text-purple-400" />
@@ -168,18 +175,29 @@ const DashboardLayout = ({ children, title, subtitle, sidebarExtra, subNavigatio
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
                 {/* Desktop Top Bar */}
-                <div className="hidden md:flex justify-between items-center p-8 pb-4 bg-gray-100 sticky top-0 z-10">
+                <div className="hidden md:flex justify-between items-center p-8 pb-4 bg-gray-100 dark:bg-slate-900 sticky top-0 z-10 transition-colors duration-300">
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-800">{title || 'Dashboard'}</h2>
-                        {subtitle && <p className="text-slate-500 text-sm">{subtitle}</p>}
+                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white transition-colors">{title || 'Dashboard'}</h2>
+                        {subtitle && <p className="text-slate-500 dark:text-slate-400 text-sm transition-colors">{subtitle}</p>}
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all shadow-sm font-medium text-sm"
-                    >
-                        <Power className="h-4 w-4" />
-                        Sign Out
-                    </button>
+                    
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={toggleTheme} 
+                            className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-yellow-400 shadow-sm hover:shadow-md transition-all"
+                            title="Toggle Theme"
+                        >
+                            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                        </button>
+
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-100 dark:hover:bg-red-900/10 dark:hover:text-red-400 dark:hover:border-red-900/30 transition-all shadow-sm font-medium text-sm"
+                        >
+                            <Power className="h-4 w-4" />
+                            Sign Out
+                        </button>
+                    </div>
                 </div>
 
                 {/* Content Area */}
