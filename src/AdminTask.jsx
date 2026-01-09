@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ref, set, update, onValue, remove } from 'firebase/database';
-import { database } from "./services/FirebaseConfig";
 import { Trash2, Edit2, Plus, X, LayoutList, CheckCircle2, Activity, Award } from 'lucide-react';
 import DashboardLayout from './components/DashboardLayout';
 import { useLocation } from 'react-router-dom';
+import { dbService } from './services/dbService'; // Import Service Layer
+import { useTasks } from './hooks/useRealtimeData'; // Import Hook for reading
 
 const AdminTask = () => {
     const location = useLocation();
@@ -33,7 +33,9 @@ const AdminTask = () => {
         category: 'standard', // Initial value, will be synced
     });
 
-    const [tasks, setTasks] = useState([]);
+    // Use Custom Hook for real-time data
+    const { tasks, loading, error } = useTasks();
+    
     const [editingTaskId, setEditingTaskId] = useState(null);
     const [message, setMessage] = useState({ text: '', type: '' });
     const [showForm, setShowForm] = useState(false);
@@ -62,29 +64,6 @@ const AdminTask = () => {
         { value: 'Award', label: 'Award', bg: 'bg-amber-500/30' },
         { value: 'Users', label: 'Users', bg: 'bg-amber-500/30' },
     ];
-
-    useEffect(() => {
-        const tasksRef = ref(database, 'tasks');
-        const unsubscribe = onValue(tasksRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                const formattedTasks = Object.entries(data)
-                    .map(([key, value]) => {
-                        if (!value) return null;
-                        return {
-                            ...value,
-                            id: key,
-                        };
-                    })
-                    .filter(item => item !== null);
-                setTasks(formattedTasks);
-            } else {
-                setTasks([]);
-            }
-        });
-
-        return () => unsubscribe();
-    }, []);
 
     // Sync form category with activeTab when tab changes
     useEffect(() => {
@@ -126,42 +105,21 @@ const AdminTask = () => {
         }
 
         try {
+            const payload = {
+                ...taskForm,
+                 category: activeTab,
+                 points: parseInt(taskForm.points, 10),
+                 total: activeTab === 'standard' ? 1 : parseInt(taskForm.total || 1, 10),
+            };
+
             if (editingTaskId) {
-                // Update
-                const taskRef = ref(database, `tasks/${editingTaskId}`);
-                const taskPayload = {
-                    ...taskForm,
-                    category: activeTab,
-                    points: parseInt(taskForm.points, 10),
-                    total: activeTab === 'standard' ? 1 : parseInt(taskForm.total || 1, 10),
-                    updatedAt: new Date().toISOString()
-                };
-                await update(taskRef, taskPayload);
-                showMessage('Task updated successfully');
+                 // UPDATE via Service
+                 await dbService.updateTask(editingTaskId, payload);
+                 showMessage('Task updated successfully');
             } else {
-                // Create
-                let nextId = 0;
-                if (tasks && tasks.length > 0) {
-                    const existingIds = tasks
-                        .map(t => parseInt(t.id, 10))
-                        .filter(num => !isNaN(num));
-
-                    if (existingIds.length > 0) {
-                        nextId = Math.max(...existingIds) + 1;
-                    }
-                }
-
-                const newTaskRef = ref(database, `tasks/${nextId}`);
-                const taskPayload = {
-                    ...taskForm,
-                    category: activeTab,
-                    points: parseInt(taskForm.points, 10),
-                    total: activeTab === 'standard' ? 1 : parseInt(taskForm.total || 1, 10),
-                    createdAt: new Date().toISOString()
-                };
-
-                await set(newTaskRef, taskPayload);
-                showMessage('Task created successfully');
+                 // CREATE via Service
+                 await dbService.addTask(payload);
+                 showMessage('Task created successfully');
             }
             resetForm();
         } catch (error) {
@@ -192,7 +150,7 @@ const AdminTask = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this task?')) {
             try {
-                await remove(ref(database, `tasks/${id}`));
+                await dbService.deleteTask(id);
                 showMessage('Task deleted successfully');
             } catch (error) {
                 showMessage('Error deleting task', 'error');
@@ -380,6 +338,7 @@ const AdminTask = () => {
                 <TaskTable
                     title={getTabLabel()}
                     tasks={activeTab === 'standard' ? tasks : tasks.filter(t => t.category === activeTab)}
+                    loading={loading}
                     onDelete={handleDelete}
                     onEdit={handleEdit}
                     color={activeTab === 'standard' ? 'blue' : activeTab === 'daily' ? 'purple' : activeTab === 'weekly' ? 'pink' : 'amber'}
@@ -390,7 +349,7 @@ const AdminTask = () => {
 };
 
 // Sub-component for clean tables
-const TaskTable = ({ title, tasks, onDelete, onEdit, color }) => {
+const TaskTable = ({ title, tasks, loading, onDelete, onEdit, color }) => {
     const colorClasses = {
         blue: 'from-blue-600 to-blue-400 shadow-blue-500/40',
         purple: 'from-purple-600 to-purple-400 shadow-purple-500/40',
@@ -403,7 +362,7 @@ const TaskTable = ({ title, tasks, onDelete, onEdit, color }) => {
             <div className={`mx-4 -mt-6 p-4 mb-4 rounded-xl bg-gradient-to-tr ${colorClasses[color] || colorClasses.blue} shadow-lg flex justify-between items-center text-white`}>
                 <div>
                     <h3 className="text-lg font-bold tracking-wide">{title}</h3>
-                    <p className="text-sm opacity-80 font-light">Manage {title.toLowerCase()} list.</p>
+                    <p className="text-sm opacity-80 font-light">Manage {title ? title.toLowerCase() : 'tasks'} list.</p>
                 </div>
             </div>
 
@@ -426,7 +385,16 @@ const TaskTable = ({ title, tasks, onDelete, onEdit, color }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {tasks.length > 0 ? (
+                        {loading ? (
+                             <tr>
+                                <td colSpan="4" className="text-center p-8">
+                                    <div className="flex justify-center items-center gap-2 text-slate-400">
+                                        <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                        <span>Loading Tasks...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : tasks && tasks.length > 0 ? (
                             tasks.map((task) => (
                                 <tr
                                     key={task.id}

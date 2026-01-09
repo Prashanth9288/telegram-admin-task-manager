@@ -1,15 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import {
-    ref,
-    push,
-    set,
-    update,
-    onValue,
-    serverTimestamp,
-    query,
-    orderByChild
-} from 'firebase/database';
-import { database } from "./services/FirebaseConfig";
+import React, { useState } from 'react';
+import { dbService } from './services/dbService'; // Service Layer
+import { useNews } from './hooks/useRealtimeData'; // Custom Hook
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
@@ -25,15 +16,15 @@ import {
     Search,
     Activity,
     FileText,
-    ChevronDown
+    ChevronDown,
+    Trash2
 } from 'lucide-react';
 import DashboardLayout from './components/DashboardLayout';
 
 const AdminNews = () => {
-    const [newsList, setNewsList] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    // News Form State
+    // Real-time News Data
+    const { news: newsList, loading: isLoading } = useNews();
+    
     const [newsModalOpen, setNewsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState('add');
     const [currentNews, setCurrentNews] = useState({
@@ -46,38 +37,9 @@ const AdminNews = () => {
     const [editingNewsId, setEditingNewsId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Pagination / Limit State
     const [visibleCount, setVisibleCount] = useState(10);
 
-    // Load news
-    useEffect(() => {
-        const newsRef = query(ref(database, 'news'), orderByChild('createdAt'));
-        const unsubscribe = onValue(newsRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                const newsArray = Object.entries(data)
-                    .map(([id, item]) => ({ id, ...item }))
-                    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                setNewsList(newsArray);
-            } else {
-                setNewsList([]);
-            }
-            setIsLoading(false);
-        },
-            (error) => {
-                toast.error(`Error: ${error.message}`);
-                setIsLoading(false);
-            }
-        );
-        return () => unsubscribe();
-    }, []);
 
-    // Reset pagination when search changes
-    useEffect(() => {
-        setVisibleCount(10);
-    }, [searchTerm]);
-
-    // Toggle Form
     const toggleForm = () => {
         if (newsModalOpen) {
             setNewsModalOpen(false);
@@ -100,272 +62,293 @@ const AdminNews = () => {
 
         try {
             if (modalMode === 'edit' && editingNewsId) {
-                await update(ref(database, `news/${editingNewsId}`), {
-                    ...currentNews,
-                    updatedAt: serverTimestamp()
-                });
+                // UPDATE via Service
+                await dbService.updateNews(editingNewsId, currentNews);
                 toast.success('News updated');
             } else {
-                const newNewsRef = push(ref(database, 'news'));
-                await set(newNewsRef, {
-                    ...currentNews,
-                    createdAt: serverTimestamp()
-                });
+                // CREATE via Service
+                await dbService.addNews(currentNews);
                 toast.success('News added');
             }
             setNewsModalOpen(false);
             setCurrentNews({ title: '', summary: '', category: '', imageUrl: '', readMoreLink: '' });
             setEditingNewsId(null);
         } catch (error) {
-            toast.error(`Error: ${error.message}`);
+            console.error(error);
+            toast.error('Error saving news');
         }
     };
 
-    const formatDate = (timestamp) => {
-        if (!timestamp) return '-';
-        return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(timestamp));
+    const handleDelete = async (id) => {
+        if (window.confirm("Are you sure you want to delete this article?")) {
+            try {
+                await dbService.deleteNews(id);
+                toast.success("News deleted");
+            } catch (error) {
+                toast.error("Error deleting news");
+            }
+        }
     };
 
+    const handleEdit = (item) => {
+        setCurrentNews({
+            title: item.title || '',
+            summary: item.summary || '',
+            category: item.category || '',
+            imageUrl: item.imageUrl || '',
+            readMoreLink: item.readMoreLink || '',
+        });
+        setEditingNewsId(item.id);
+        setModalMode('edit');
+        setNewsModalOpen(true);
+    };
+
+    // Derived state for filtering
     const filteredNews = newsList.filter(item =>
         item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.category?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const displayedNews = filteredNews.slice(0, visibleCount);
+    const visibleNews = filteredNews.slice(0, visibleCount);
+
+    const loadMore = () => {
+        setVisibleCount(prev => prev + 10);
+    };
+
+    const formatDate = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        // Handle legacy data where timestamp might be in seconds (10 digits) instead of ms (13 digits)
+        const dateValue = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
+        return new Date(dateValue).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const categories = ['General', 'Update', 'Event', 'Maintenance', 'Promotion', 'Community'];
 
     return (
-        <DashboardLayout title="News Management" subtitle="Publish and manage articles">
-            <ToastContainer theme="colored" position="bottom-right" />
+        <DashboardLayout title="News Management" subtitle="Publish updates and announcements">
+            <ToastContainer position="top-right" theme="colored" />
 
-            {/* Quick Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                <div className="relative flex flex-col min-w-0 break-words bg-white shadow-xl rounded-2xl bg-clip-border">
-                    <div className="absolute -top-4 left-4 p-4 bg-gradient-to-tr from-gray-900 to-gray-800 rounded-xl shadow-lg shadow-gray-900/40 text-white">
-                        <Newspaper className="w-6 h-6" />
-                    </div>
-                    <div className="p-4 text-right">
-                        <p className="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Total Articles</p>
-                        <h4 className="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">{newsList.length}</h4>
-                    </div>
-                    <div className="border-t border-blue-gray-50 p-4">
-                        <div className="flex items-center gap-2 text-emerald-500 text-sm font-bold">
-                            <Activity className="h-4 w-4 animate-pulse" />
-                            <span className="font-normal text-slate-500">System Status: <span className="text-emerald-500 font-bold">Online</span></span>
-                        </div>
-                    </div>
+            {/* Controls Bar */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                <div className="relative w-full md:w-96">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Search news..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-500 transition-colors"
+                    />
                 </div>
-
-                {/* Action Card to Trigger Form */}
-                <div
+                <button
                     onClick={toggleForm}
-                    className="relative flex flex-col min-w-0 break-words bg-white shadow-xl rounded-2xl bg-clip-border cursor-pointer hover:-translate-y-1 transition-transform group"
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-gradient-to-r from-pink-600 to-rose-500 text-white rounded-lg font-bold text-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all"
                 >
-                    <div className={`absolute -top-4 left-4 p-4 rounded-xl shadow-lg text-white transition-colors ${newsModalOpen ? 'bg-gradient-to-tr from-red-600 to-red-400 shadow-red-500/40' : 'bg-gradient-to-tr from-green-600 to-green-400 shadow-green-500/40'}`}>
-                        {newsModalOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-                    </div>
-                    <div className="p-4 text-right">
-                        <p className="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Quick Action</p>
-                        <h4 className="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900 group-hover:text-purple-600 transition-colors">
-                            {newsModalOpen ? 'Close Editor' : 'Publish News'}
-                        </h4>
-                    </div>
-                    <div className="border-t border-blue-gray-50 p-4">
-                        <p className="block antialiased font-sans text-base leading-relaxed font-normal text-slate-500">
-                            Click to toggle editor
-                        </p>
-                    </div>
-                </div>
+                    <Plus className="w-4 h-4" />
+                    Create Article
+                </button>
             </div>
 
+            {/* Modal Form */}
+            {newsModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 bg-gradient-to-r from-pink-600 to-rose-500 flex justify-between items-center text-white">
+                            <h3 className="font-bold text-lg flex items-center gap-2">
+                                {modalMode === 'add' ? <Plus className="w-5 h-5" /> : <Edit3 className="w-5 h-5" />}
+                                {modalMode === 'add' ? 'New Article' : 'Edit Article'}
+                            </h3>
+                            <button onClick={toggleForm} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
 
-            {/* FORM CARD */}
-            <div
-                id="admin-news-form"
-                className={`transition-all duration-500 ease-in-out ${newsModalOpen ? 'max-h-[1000px] opacity-100 mb-12' : 'max-h-0 opacity-0 overflow-hidden'}`}
-            >
-                <div className="relative flex flex-col min-w-0 break-words bg-white w-full shadow-xl shadow-slate-200 rounded-2xl">
-                    <div className="mx-4 -mt-6 p-4 mb-6 rounded-xl bg-gradient-to-tr from-purple-600 to-purple-400 shadow-lg shadow-purple-500/40 flex justify-between items-center text-white">
-                        <h3 className="text-lg font-bold tracking-wide">
-                            {modalMode === 'edit' ? 'Edit Article' : 'Publish New Article'}
-                        </h3>
-                        <Edit3 className="h-5 w-5 opacity-80" />
-                    </div>
-                    <div className="p-6 px-8 flex-auto">
-                        <form onSubmit={handleFormSubmit}>
-                            <div className="space-y-6">
-                                <div className="space-y-1">
-                                    <label className="text-xs uppercase text-slate-400 font-bold ml-1">Article Title</label>
-                                    <div className="flex items-center">
-                                        <Type className="h-5 w-5 text-slate-400 mr-2" />
-                                        <input
-                                            value={currentNews.title}
-                                            onChange={e => setCurrentNews({ ...currentNews, title: e.target.value })}
-                                            className="w-full border-b border-slate-200 bg-transparent py-2 px-1 text-slate-700 font-medium focus:border-purple-500 focus:outline-none transition-colors"
-                                            placeholder="Enter headline..."
-                                            required
-                                        />
-                                    </div>
+                        <form onSubmit={handleFormSubmit} className="p-6 md:p-8 space-y-6 max-h-[80vh] overflow-y-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                        <Type className="w-3 h-3" /> Title
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition-all"
+                                        placeholder="Enter headline..."
+                                        value={currentNews.title}
+                                        onChange={(e) => setCurrentNews({ ...currentNews, title: e.target.value })}
+                                    />
                                 </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-xs uppercase text-slate-400 font-bold ml-1">Summary</label>
-                                    <div className="flex items-start">
-                                        <FileText className="h-5 w-5 text-slate-400 mr-2 mt-2" />
-                                        <textarea
-                                            value={currentNews.summary}
-                                            onChange={e => setCurrentNews({ ...currentNews, summary: e.target.value })}
-                                            className="w-full border-b border-slate-200 bg-transparent py-2 px-1 text-slate-700 font-medium focus:border-purple-500 focus:outline-none transition-colors resize-none"
-                                            rows="2"
-                                            placeholder="Short description..."
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-1">
-                                        <label className="text-xs uppercase text-slate-400 font-bold ml-1">Category</label>
-                                        <div className="flex items-center">
-                                            <Tag className="h-5 w-5 text-slate-400 mr-2" />
-                                            <input
-                                                value={currentNews.category}
-                                                onChange={e => setCurrentNews({ ...currentNews, category: e.target.value })}
-                                                className="w-full border-b border-slate-200 bg-transparent py-2 px-1 text-slate-700 font-medium focus:border-purple-500 focus:outline-none transition-colors"
-                                                placeholder="e.g. Updates"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs uppercase text-slate-400 font-bold ml-1">Image URL (Optional)</label>
-                                        <div className="flex items-center">
-                                            <Image className="h-5 w-5 text-slate-400 mr-2" />
-                                            <input
-                                                value={currentNews.imageUrl}
-                                                onChange={e => setCurrentNews({ ...currentNews, imageUrl: e.target.value })}
-                                                className="w-full border-b border-slate-200 bg-transparent py-2 px-1 text-slate-700 font-medium focus:border-purple-500 focus:outline-none transition-colors"
-                                                placeholder="https://..."
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-xs uppercase text-slate-400 font-bold ml-1">Read More Link (Optional)</label>
-                                    <div className="flex items-center">
-                                        <ExternalLink className="h-5 w-5 text-slate-400 mr-2" />
-                                        <input
-                                            value={currentNews.readMoreLink}
-                                            onChange={e => setCurrentNews({ ...currentNews, readMoreLink: e.target.value })}
-                                            className="w-full border-b border-slate-200 bg-transparent py-2 px-1 text-slate-700 font-medium focus:border-purple-500 focus:outline-none transition-colors"
-                                            placeholder="https://..."
-                                        />
-                                    </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                        <Tag className="w-3 h-3" /> Category
+                                    </label>
+                                    <select
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-pink-500 focus:outline-none"
+                                        value={currentNews.category}
+                                        onChange={(e) => setCurrentNews({ ...currentNews, category: e.target.value })}
+                                    >
+                                        <option value="">Select Category</option>
+                                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                    </select>
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-4 mt-8">
-                                <button type="button" onClick={toggleForm} className="px-6 py-2 rounded-lg text-slate-500 font-bold text-xs uppercase hover:bg-slate-100 transition-all">Cancel</button>
-                                <button type="submit" className="px-6 py-2 rounded-lg bg-gradient-to-tr from-purple-600 to-purple-400 text-white font-bold text-xs uppercase shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/40 transition-all flex items-center gap-2">
-                                    <Save className="h-4 w-4" />
-                                    {modalMode === 'edit' ? 'Update News' : 'Publish News'}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                    <FileText className="w-3 h-3" /> Summary
+                                </label>
+                                <textarea
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-pink-500 focus:outline-none min-h-[100px] resize-y"
+                                    placeholder="Brief content overview..."
+                                    value={currentNews.summary}
+                                    onChange={(e) => setCurrentNews({ ...currentNews, summary: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                    <Image className="w-3 h-3" /> Image URL (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-pink-500 focus:outline-none"
+                                    placeholder="https://..."
+                                    value={currentNews.imageUrl}
+                                    onChange={(e) => setCurrentNews({ ...currentNews, imageUrl: e.target.value })}
+                                />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                    <ExternalLink className="w-3 h-3" /> Read More Link (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-pink-500 focus:outline-none"
+                                    placeholder="https://..."
+                                    value={currentNews.readMoreLink}
+                                    onChange={(e) => setCurrentNews({ ...currentNews, readMoreLink: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="pt-4 flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={toggleForm}
+                                    className="px-6 py-2.5 rounded-lg text-slate-500 font-bold hover:bg-slate-100 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2.5 rounded-lg bg-pink-600 text-white font-bold shadow-lg shadow-pink-500/30 hover:bg-pink-700 hover:shadow-pink-600/40 transition-all flex items-center gap-2"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    {modalMode === 'add' ? 'Publish Now' : 'Save Changes'}
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* TABLE CARD */}
-            <div className="relative flex flex-col min-w-0 break-words bg-white w-full shadow-xl shadow-slate-200 rounded-2xl mb-24">
-                <div className="mx-4 -mt-6 p-4 mb-4 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-400 shadow-lg shadow-blue-500/40 flex justify-between items-center text-white">
-                    <div>
-                        <h3 className="text-lg font-bold tracking-wide">News Feed</h3>
-                        <p className="text-sm opacity-80 font-light">Existing news and updates.</p>
+            {/* News List */}
+            <div className="space-y-4">
+                {isLoading ? (
+                    <div className="flex justify-center p-12">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500"></div>
                     </div>
-                    <div className="bg-white/20 rounded-lg p-1 flex items-center">
-                        <Search className="h-4 w-4 text-white ml-2" />
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search..."
-                            className="bg-transparent border-none focus:ring-0 text-white placeholder:text-white/70 text-sm w-32 md:w-48"
-                        />
-                    </div>
-                </div>
-
-                <div className="block w-full overflow-x-auto p-2">
-                    <table className="items-center w-full bg-transparent border-collapse">
-                        <thead>
-                            <tr>
-                                <th className="px-6 py-3 text-xs uppercase align-middle bg-transparent border-b border-slate-100 text-slate-400 font-bold text-left opacity-70">ID</th>
-                                <th className="px-6 py-3 text-xs uppercase align-middle bg-transparent border-b border-slate-100 text-slate-400 font-bold text-left opacity-70">Title / Summary</th>
-                                <th className="px-6 py-3 text-xs uppercase align-middle bg-transparent border-b border-slate-100 text-slate-400 font-bold text-left opacity-70">Category</th>
-                                <th className="px-6 py-3 text-xs uppercase align-middle bg-transparent border-b border-slate-100 text-slate-400 font-bold text-left opacity-70">Date</th>
-                                <th className="px-6 py-3 text-xs uppercase align-middle bg-transparent border-b border-slate-100 text-slate-400 font-bold text-right opacity-70">View</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {isLoading ? (
-                                <tr><td colSpan="5" className="p-8 text-center text-slate-500">Loading...</td></tr>
-                            ) : displayedNews.length > 0 ? (
-                                displayedNews.map((item, index) => (
-                                    <tr key={item.id} className="hover:bg-purple-50 hover:shadow-md transition-all duration-200">
-                                        <td className="border-t-0 px-6 align-middle border-b border-slate-100 text-xs whitespace-nowrap p-4 text-left text-slate-500 font-mono">
-                                            #{index + 1}
-                                        </td>
-                                        <td className="border-t-0 px-6 align-middle border-b border-slate-100 text-xs whitespace-nowrap p-4 text-left">
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-slate-700 text-sm max-w-xs truncate">{item.title}</span>
-                                                <span className="font-normal text-slate-400 max-w-xs truncate">{item.summary}</span>
-                                            </div>
-                                        </td>
-                                        <td className="border-t-0 px-6 align-middle border-b border-slate-100 text-xs whitespace-nowrap p-4">
-                                            <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">
-                                                {item.category}
-                                            </span>
-                                        </td>
-                                        <td className="border-t-0 px-6 align-middle border-b border-slate-100 text-xs whitespace-nowrap p-4 text-slate-500">
-                                            {formatDate(item.createdAt)}
-                                        </td>
-                                        <td className="border-t-0 px-6 align-middle border-b border-slate-100 text-xs whitespace-nowrap p-4 text-right">
-                                            <a
-                                                href="https://web3today-website.vercel.app/blog"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center justify-end gap-1 text-slate-400 hover:text-indigo-600 font-bold uppercase text-xs transition-colors group/link"
-                                            >
-                                                <span className="group-hover/link:underline">Open</span>
-                                                <ExternalLink className="h-3 w-3" />
-                                            </a>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" className="text-center p-8 text-slate-400 font-medium">
-                                        No news found. Publish a new article above.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* View More Button */}
-                {visibleCount < filteredNews.length && (
-                    <div className="p-4 flex justify-center border-t border-slate-100">
-                        <button
-                            onClick={() => setVisibleCount(filteredNews.length)}
-                            className="flex items-center gap-2 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-full font-bold text-xs uppercase tracking-wider hover:bg-indigo-100 transition-all"
+                ) : visibleNews.length > 0 ? (
+                    visibleNews.map((news) => (
+                        <div
+                            key={news.id}
+                            className="group relative bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300"
                         >
-                            View All News ({filteredNews.length - visibleCount} more)
-                            <ChevronDown className="h-4 w-4" />
+                            <div className="flex flex-col md:flex-row gap-6">
+                                {/* Image / Icon Placeholder */}
+                                <div className="w-full md:w-48 h-32 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 relative">
+                                    {news.imageUrl ? (
+                                        <img src={news.imageUrl} alt={news.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                            <Newspaper className="w-12 h-12" />
+                                        </div>
+                                    )}
+                                    <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] font-bold text-white uppercase tracking-wide">
+                                        {news.category || 'General'}
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-start mb-2">
+                                         <h3 className="text-lg font-bold text-slate-800 line-clamp-1 group-hover:text-pink-600 transition-colors">
+                                            {news.title}
+                                        </h3>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => handleEdit(news)}
+                                                className="p-2 text-slate-400 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors"
+                                                title="Edit"
+                                            >
+                                                <Edit3 className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDelete(news.id)}
+                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                   
+                                    <p className="text-slate-500 text-sm leading-relaxed mb-4 line-clamp-2">
+                                        {news.summary}
+                                    </p>
+
+                                    <div className="flex items-center gap-4 text-xs text-slate-400 font-medium">
+                                        <span className="flex items-center gap-1">
+                                            <Activity className="w-3 h-3" />
+                                            {formatDate(news.createdAt)}
+                                        </span>
+                                        {news.readMoreLink && (
+                                            <span className="flex items-center gap-1 text-pink-500">
+                                                <ExternalLink className="w-3 h-3" /> External Link
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <Newspaper className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-500 font-medium">No news articles found.</p>
+                        <button onClick={toggleForm} className="mt-4 text-pink-600 font-bold text-sm hover:underline">
+                            Create your first article
                         </button>
                     </div>
                 )}
             </div>
+
+            {/* Load More */}
+            {visibleNews.length < filteredNews.length && (
+                <div className="mt-8 text-center">
+                    <button
+                        onClick={loadMore}
+                        className="inline-flex items-center gap-2 px-6 py-2 bg-white border border-slate-200 text-slate-600 rounded-full font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+                    >
+                        Load More <ChevronDown className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
         </DashboardLayout>
     );
 };
