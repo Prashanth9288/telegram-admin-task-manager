@@ -99,9 +99,23 @@ const AdminTask = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // 1. Basic Requirement Check
         if (!taskForm.title || !taskForm.type || !taskForm.points) {
             showMessage('Please fill in all required fields (Title, Type, Reward)', 'error');
             return;
+        }
+
+        // 2. Data Logic Safety (Persona Requirement: Guard Writes)
+        if (parseInt(taskForm.points) < 0) {
+             showMessage('Points cannot be negative.', 'error');
+             return;
+        }
+
+        // 3. URL Validation (Persona Requirement: Input Safety)
+        if (taskForm.url && taskForm.url.length > 0 && !/^https?:\/\//i.test(taskForm.url)) {
+             showMessage('Link URL must start with http:// or https://', 'error');
+             return;
         }
 
         try {
@@ -148,11 +162,16 @@ const AdminTask = () => {
     };
 
     const handleDelete = async (id) => {
+        // Critical Fix: Ensure we delete from the correct category path
+        const taskToDelete = tasks.find(t => t.id === id);
+        const category = taskToDelete?.category || activeTab;
+
         if (window.confirm('Are you sure you want to delete this task?')) {
             try {
-                await dbService.deleteTask(id);
+                await dbService.deleteTask(id, category);
                 showMessage('Task deleted successfully');
             } catch (error) {
+                console.error("Delete failed", error);
                 showMessage('Error deleting task', 'error');
             }
         }
@@ -397,7 +416,7 @@ const TaskTable = ({ title, tasks, loading, onDelete, onEdit, color }) => {
                         ) : tasks && tasks.length > 0 ? (
                             tasks.map((task) => (
                                 <tr
-                                    key={task.id}
+                                    key={`${task.category || 'task'}-${task.id}`}
                                     className="hover:bg-slate-50 hover:shadow-sm transition-all duration-200"
                                 >
                                     <td className="border-t-0 px-6 align-middle border-b border-slate-100 text-xs whitespace-nowrap p-4 text-left">
@@ -431,8 +450,11 @@ const TaskTable = ({ title, tasks, loading, onDelete, onEdit, color }) => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="4" className="text-center p-8 text-slate-400 font-medium">
-                                    No tasks in this category.
+                                <td colSpan="4" className="text-center p-12 text-slate-400 font-medium">
+                                    <div className="flex flex-col items-center gap-3 opacity-60">
+                                         <LayoutList className="w-10 h-10" />
+                                         <span>No tasks found in this category.</span>
+                                    </div>
                                 </td>
                             </tr>
                         )}
