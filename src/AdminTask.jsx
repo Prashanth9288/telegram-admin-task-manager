@@ -31,6 +31,7 @@ const AdminTask = () => {
         icon: '',
         iconBg: '',
         category: 'standard', // Initial value, will be synced
+        secretCode: '', // New Field for Secret Code
     });
 
     // Use Custom Hook for real-time data
@@ -92,7 +93,7 @@ const AdminTask = () => {
     };
 
     const resetForm = () => {
-        setTaskForm({ title: '', description: '', type: '', points: '', url: '', total: '', icon: '', iconBg: '', category: activeTab });
+        setTaskForm({ title: '', description: '', type: '', points: '', url: '', total: '', icon: '', iconBg: '', category: activeTab, secretCode: '' });
         setEditingTaskId(null);
         setShowForm(false);
     };
@@ -153,6 +154,7 @@ const AdminTask = () => {
             icon: task.icon || '',
             iconBg: task.iconBg || '',
             category: task.category || 'standard',
+            secretCode: task.secretCode || '',
         });
         setEditingTaskId(task.id);
         setShowForm(true);
@@ -193,7 +195,7 @@ const AdminTask = () => {
                         setShowForm(!showForm);
                         if (!showForm) {
                             setEditingTaskId(null);
-                            setTaskForm({ title: '', description: '', type: '', points: '', url: '', total: '', icon: '', iconBg: '', category: activeTab });
+                            setTaskForm({ title: '', description: '', type: '', points: '', url: '', total: '', icon: '', iconBg: '', category: activeTab, secretCode: '' });
                         }
                     }}
                     className={`flex items-center gap-3 px-6 py-3 rounded-xl text-white font-bold shadow-lg transition-all transform hover:-translate-y-1 ${showForm ? 'bg-slate-700 shadow-slate-500/30' : 'bg-gradient-to-tr from-purple-600 to-purple-400 shadow-purple-500/30'}`}
@@ -328,6 +330,26 @@ const AdminTask = () => {
                                     />
                                 </div>
                             </div>
+
+                            {/* Secret Code Input - Only for 'watch' type */}
+                            {taskForm.type === 'watch' && (
+                                <div className="grid grid-cols-1 gap-8 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                                    <div className="space-y-1">
+                                        <label className="text-xs uppercase text-amber-500/80 font-bold ml-1 flex items-center gap-2">
+                                            Secret Code
+                                            <span className="text-[10px] font-normal text-slate-400 normal-case">(Required for user validation)</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="secretCode"
+                                            value={taskForm.secretCode}
+                                            onChange={handleChange}
+                                            className="w-full border-b border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-900/10 py-2 px-1 text-slate-700 dark:text-slate-200 font-bold focus:border-amber-500 dark:focus:border-amber-500 focus:outline-none transition-colors placeholder-slate-400 dark:placeholder-slate-600 tracking-wider"
+                                            placeholder="Ex: CODE123"
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="mb-8 space-y-1">
                                 <label className="text-xs uppercase text-slate-400 dark:text-slate-500 font-bold ml-1">Description</label>
