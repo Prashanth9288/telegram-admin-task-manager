@@ -125,6 +125,7 @@ const AdminTask = () => {
                  category: activeTab,
                  points: parseInt(taskForm.points, 10),
                  total: activeTab === 'standard' ? 1 : parseInt(taskForm.total || 1, 10),
+                 videoUrl: taskForm.url, // Sync videoUrl with url for compatibility with User App
             };
 
             if (editingTaskId) {
